@@ -163,6 +163,8 @@ class BaseAnalyzer(ParseTreeVisitor):
     # parse a file or list of file
     @classmethod
     def parse(cls, srcList, vunit=None, options=None):
+        if isinstance(srcList, (str,unicode)):
+            srcList = [srcList]
         assert isinstance(srcList, (list, tuple))
         if options is None:
             options = AnalyzerOption()

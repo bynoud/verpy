@@ -10,7 +10,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
-v = ModuleAnalyzer.parse(filename='./tests/syntaxonly/legacyver.v')
+v = ModuleAnalyzer.parse('./tests/syntaxonly/legacyver.v')
 v.link()
 v.dump()
 v.elaborate()

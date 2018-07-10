@@ -159,9 +159,7 @@ class SizeSliceable(SliceableObject):
         r._lds = self._lds
         return r
 
-    # to resolve parameter.
-    # except new_dim, all function need elab first
-    def elaborate(self, params=None):
+    def init_driverload(self):
         self._drv = []  # [ [ d11, d12], [d21], ...]
                                         #                ^bit[0] drv
                                         #                            ^bit[2]

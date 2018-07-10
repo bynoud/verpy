@@ -132,4 +132,16 @@ class Module(VerilogObject, ParamMixin):
         for a in self.assigns: a.dump(indent)
         for c in self.seqs: c.dump(indent)
 
+### end of Module
+
+## pre-elabed module, not usefull until it is elabed
+## provide same public method as Module
+class AModule(object):
+    def __init__(self, name='', kw='module'):
+        self.keyw = kw
+        self.nets = []
+
+
+
+
 

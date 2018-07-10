@@ -2,9 +2,48 @@
 class CloneableMixin(object):
 
     def clone(self, *args, **kwargs):
-        c = object.__new__(self.__class__)
+        c = object.__new__(type(self))
         c.copyfrom(self, *args, **kwargs)
         return c
+
+# expect the __dict__ only have standard type, or CloneableMixin
+class PrimCloneableMixin(CloneableMixin):
+    def copyfrom(self, frm):
+        def _copy(frm, vdeep=True):
+            ret = None
+            if isinstance(frm, CloneableMixin):
+                ret = frm if not vdeep else frm.clone()
+            elif isinstance(frm, list):
+                ret = []
+                for i in frm: ret.append(_copy(i))
+            elif isinstance(frm, set):
+                ret = set()
+                for i in frm: ret.add(_copy(i))
+            elif isinstance(frm, dict):
+                ret = {}
+                for (k,v) in frm.items():
+                    ret[_copy(k)] = _copy(v)
+            elif isinstance(frm, (str,unicode,int,float,long,bool)):
+                ret = frm
+            else:
+                #ret = frm
+                raise NotImplementedError()
+            return ret
+
+        try:
+            exl = self.__exludedMems
+        except:
+            exl = []
+        try:
+            slw = self.__shallowMems    # shallow copy
+        except:
+            slw = []
+        for k,v in frm.__dict__.iteritems():
+            if k in slw:
+                self.__dict__[k] = v
+            elif k not in exl:
+                self.__dict__[k] = _copy(v)
+
 
 class ContainableMixin(object):
     def init(self, depth=1):
@@ -13,9 +52,9 @@ class ContainableMixin(object):
             self.__contRef.append([])
         return self
 
-    def containerCopy(self, frm, **kwargs):
-        from VerilogObject import primaryCopy
-        self.__contRef = primaryCopy(frm.__contRef, False) # shadow copy if already resolved
+    #def containerCopy(self, frm, **kwargs):
+    #    from VerilogObject import primaryCopy
+    #    self.__contRef = primaryCopy(frm.__contRef, False) # shadow copy if already resolved
 
     # this normally called ad analyze time, bus-width maybe in form of expression
     # 'addto' is a list of :
