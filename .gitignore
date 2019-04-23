@@ -2,6 +2,10 @@
 log*
 *.log
 tmp/
+AN.DB/
+csrc/
+simv*
+*.swp
 
 ## Java
 

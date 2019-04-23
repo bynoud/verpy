@@ -17,11 +17,19 @@
 // Semiconductor Inc..
 //-----------------------------------------------------------------------------
 
-module legacyver (
+`define ANOTHER in_wpat3
+
+module legacy_direct (
   clk, rstn,
   in0, in1,
   out0, out1,
-  in_wpat1, in_wpat2,
+  `ifdef ENTHIS
+  in_wpat1,
+  `elsif ENTHAT
+  in_wpat2,
+  `else
+  `ANOTHER,
+  `endif
   out_wpat1, out_wpat2
 );
 
@@ -33,31 +41,45 @@ output wire [AW+11:8] out0;
 output [7:4] out1;
 reg [7:4] out1;
 
-
+`ifdef ENTHIS
 input [7:3] in_wpat1;
 wire [7:3] in_wpat1;
+`define TBU in_wpat1[7:5]
+`elsif ENTHAT
 input [15:12] in_wpat2;
+`define TBU in_wpat2[14:12]
+`else
+input [4:0] `ANOTHER;
+`define TBU `ANOTHER[4:1]
+`endif
+
+`define CLKEDGE(c,r) (posedge c or negedge r)
 
 output [3:1] out_wpat1;
 output reg [5:3] out_wpat2;
 
-wire [4:0] wirename1 = in_wpat1[3] ? in_wpat1[7:5] : in1[AW-1:3];
-wire [3:2] wirename2 = in_wpat1[4] ? in0[3:2] :
-                       (in_wpat2==4) ? in1[3:2] : in1[7:5];
-                        
+`ifndef ENTHIS
+    `ifndef ENTHAT
+        `include "incthis.inc"
+    `else
+        assign out_wpat1 = 'h1;
+    `endif
+`else
+    assign out_wpat1 = 'b0;
+    always @* out_wpat2 = 'b0;
+`endif
 
-always @(posedge clk or negedge rstn) begin
+wire [4:0] wirename1 = `TBU & in1[AW-1:3];
+
+`define ENCOND(s) (s && `TBU==0)
+
+always @`CLKEDGE ( clk, rstn) begin
   if (rstn) out1 <= #0.1 4'b0;
-  else if (in0[2]) out1 <= #0.1 wirename1[3:1];
+  else if (`ENCOND(in0[2])) out1 <= #0.1 wirename1[3:1];
 end
 
 assign out0 = in1;
 
-legacy_direct #(6) i_direct (
-  .clk(clk), .rstn(rstn), .in0(in0), .out0(out_wpat1));
-
-  modname #(6) i_mod0 (clk, rstn, in1[7:4], out0[3:0]);
-  modname #(8) i_mod1 (clk, rstn, in1, out0);
 
 endmodule
 

@@ -2,7 +2,7 @@
 from __future__ import print_function, absolute_import
 from .VerilogObject import *
 from .VList import ModuleList
-from VerpyError import *
+from ..VerpyError import *
 
 class Unit(VerilogObject):
     def __init__(self, options, name='$unit'):
@@ -21,7 +21,20 @@ class Unit(VerilogObject):
 
     def newModule(self, name, kw="module"):
         debug("new %s for %s : %s" % (kw, self.name, name))
+        for m in self.mods: print("  %s" % m.name)
         return self.mods.new(name=name, kw=kw)
+
+    def findModule(self, name):
+        return None if name not in self.mods else self.mods[name]
+
+    def removeModule(self, name):
+        if name in self.mods:
+            for m in self.mods:
+                for c in m.cells:
+                    if c.modref is self.mods[name]:
+                        c.modref = None
+            del self.mods[name]
+            del self.tops[name]
 
     def link(self):
         """
@@ -30,11 +43,10 @@ class Unit(VerilogObject):
         self.tops = self.mods[:]
         for m in self.mods:
             for c in m.cells:
-                try:
+                if c.modname in self.mods:
                     c.modref = self.mods[c.modname]
-                    self.tops.remove(c.modname)     # not in tops, if not in mods
-                except:
-                    pass
+                if c.modname in self.tops:
+                    del self.tops[c.modname]
         self._linked = True
 
     def elaborate(self, topname=''):

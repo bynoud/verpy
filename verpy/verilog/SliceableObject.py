@@ -1,7 +1,7 @@
 
 from __future__ import print_function, absolute_import
 from .VerilogObject import *
-from VerpyError import *
+from ..VerpyError import *
 
 def _unpack2dList(msb, lsb):
     if isinstance(msb,list): [m,l] = (msb + [None])[:2]
@@ -30,8 +30,8 @@ class SliceableObject(VerilogObject):
         self._arr = []    # [[msb,lsb, packed], [msb,lsb, packed]...]
                                             #  [-1,-1,packed ] if array size is unknown
 
-    def copyfrom(self, frm):
-        super(SliceableObject, self).copyfrom(frm)
+    def copyfrom(self, frm, **kwargs):
+        super(SliceableObject, self).copyfrom(frm, **kwargs)
         self.adeep = frm.adeep
         self.fixsize = frm.fixsize
         # array of array
@@ -104,18 +104,6 @@ class SliceableObject(VerilogObject):
             else      : t += ("[%s]" % m)
         return t
 
-    # use for declare
-    @property
-    def decl(self):
-        ptxt = utxt = ""
-        for [m,l,p] in self._arr:
-            t = '[*]' if m<0 else ("[%s:%s]" % (m,l))
-            if p: ptxt += t+" "
-            else: utxt += " "+t
-        txt = ptxt+self.name+utxt
-        return txt
-
-
     @property
     def nextbus(self):
         if self.adeep < len(self._arr)-1: return self._arr[self.adeep+1][:2]
@@ -141,17 +129,17 @@ class SizeSliceable(SliceableObject):
         self._drv = []
         self._lds = []
 
-    def copyfrom(self, frm):
-        super(SizeSliceable, self).copyfrom(frm)
+    def copyfrom(self, frm, **kwargs):
+        super(SizeSliceable, self).copyfrom(frm, **kwargs)
         # array-of-array or simple array
         self._drv = []
-        for a in frm._drv:
-            if isinstance(a,list): self._drv.append(a[:])
-            else: self._drv.append(a)
+        #for a in frm._drv:
+        #    if isinstance(a,list): self._drv.append(a[:])
+        #    else: self._drv.append(a)
         self._lds = []
-        for a in frm._lds:
-            if isinstance(a,list): self._lds.append(a[:])
-            else: self._lds.append(a)
+        #for a in frm._lds:
+        #    if isinstance(a,list): self._lds.append(a[:])
+        #    else: self._lds.append(a)
 
     def regslice(self, msb, lsb=None):
         r = super(SizeSliceable, self).regslice(msb, lsb)

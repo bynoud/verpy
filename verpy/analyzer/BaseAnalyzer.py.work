@@ -53,6 +53,24 @@ def dim2arr(ctx):
                 ret.append([ctx.star.text])
     return ret
 
+_contStack = []
+def initCont(mindeep=1):
+    #_contStack = []
+    while len(_contStack) > mindeep: _contStack.pop()
+def pushCont(cont):
+    #debug("%sPush %s" % ("  "*len(_contStack), type(cont)))
+    #print("%sPush %s" % ("  "*len(_contStack), type(cont)))
+    _contStack.append(cont)
+    return cont
+def popCont():
+    #debug("%sPop %s" % ("  "*(len(_contStack)-1), type(curCont())))
+    #print("%sPop %s" % ("  "*(len(_contStack)-1), type(curCont())))
+    try: return _contStack.pop()
+    except: raise InternalFatal("contStack overflow")
+def curCont():
+    try: return _contStack[-1]
+    except: return None
+
 #def initDefaultChild(s):
 #    import re
 #    nodes = {}
@@ -69,7 +87,24 @@ def dim2arr(ctx):
 class VisitUnknownChild(Exception):
     pass
 
-class BaseAnalyzer(ParseTreeVisitor):
+class AnalyzerContainer(object):
+    def __init__(self, icont):
+        self._cont = icont
+        self._contDeep = 0
+
+    def travelDown(self, cmd, *args, **nargs):
+        c = getattr(self._cont, cmd)(*args, **nargs)
+        self._contDeep += 1
+        return AnalyzerContainer(c)
+
+    def pipe(self, cmd, *args, **nargs):
+        from types import StringTypes
+        if isinstance(cmd, StringTypes):
+            getattr(self._cont, cmd, *args, **nargs)
+        else:
+            cmd(*args, **nargs)
+
+class BaseAnalyzer(ParseTreeVisitor, AnalyzerContainerMixin):
     def __init__(self, strOpts=None, options=None,
             parser=None, lexer=None, defaultVisit=""):
         self._savedctx = {}
@@ -80,33 +115,12 @@ class BaseAnalyzer(ParseTreeVisitor):
         self.parser.buildParseTrees = True
         self.unit = Unit(options=self.opts)
         self.__initDefaultChilds(defaultVisit)
-
-        self._contStack = []
-        self.pushCont(self.unit)
+        pushCont(self.unit)
 
         self.parser.removeErrorListeners()  # remove console log
         self.parser.addErrorListener(AnalyzerErrorListener())
         self.lexer.removeErrorListeners()  # remove console log
         self.lexer.addErrorListener(AnalyzerErrorListener())
-
-    def initCont(self, mindeep=1):
-        #_contStack = []
-        while len(self._contStack) > mindeep: self._contStack.pop()
-    def pushCont(self, cont):
-        #debug("%sPush %s" % ("  "*len(_contStack), type(cont)))
-        #print("%sPush %s" % ("  "*len(_contStack), type(cont)))
-        self._contStack.append(cont)
-        return cont
-    def popCont(self):
-        #debug("%sPop %s" % ("  "*(len(_contStack)-1), type(curCont())))
-        #print("%sPop %s" % ("  "*(len(_contStack)-1), type(curCont())))
-        try: return self._contStack.pop()
-        except: raise InternalFatal("contStack overflow")
-    def curCont(self):
-        try: return self._contStack[-1]
-        except: return None
-    def lenCont(self):
-        return len(self._contStack)
 
     def __initDefaultChilds(self, s):
         # NOTE : the first appear has higher priority
@@ -146,7 +160,6 @@ class BaseAnalyzer(ParseTreeVisitor):
             return None
 
 
-
     # call this to accept all Grands instead
     def visitGrands(self, node):
         self.visitChilds(node, True)
@@ -179,12 +192,6 @@ class BaseAnalyzer(ParseTreeVisitor):
     def addOptions(self, fstr):
         self.opts.addOpt(fstr)
 
-    def removeModule(self, name):
-        self.unit.removeModule(name)
-
-    def findModule(self, name):
-        return self.unit.findModule(name)
-
     def _parse(self, filename='', fromstr='', srcName='', entry=''):
         if filename:
             #info("Analyzing file '%s' ..." % filename)
@@ -199,7 +206,7 @@ class BaseAnalyzer(ParseTreeVisitor):
         else:
             raise Exception("Either filename of fromstr must be specified")   
 
-        curDeep = self.lenCont()
+        curDeep = len(_contStack)
         #print("currentCont : %s" % type(curCont()))
         # reset token stream
         self.lexer.inputStream = istr
@@ -215,29 +222,28 @@ class BaseAnalyzer(ParseTreeVisitor):
         tree = entryFn()
         self.visitChilds(tree)  # dont use visit or accept, it visit Grand
         # safe gaurd
-        if self.lenCont() != curDeep:
+        if len(_contStack) != curDeep:
             raise InternalFatal("Analyzing failed")
 
     # Top level analyze
     def analyze(self):
-        self.initCont()
+        initCont()
         for f in self.opts.unprocessedFiles():
             self._parse(filename=f)
             self.opts.processedFile(f)
-        self.unit.link()
-        return self.unit
+        return curCont()
 
     def analyzeFile(self, name, vunit=None, entry=''):
-        if vunit: self.pushCont(vunit)
+        if vunit: pushCont(vunit)
         f = self.opts.newFile(name)
         self._parse(filename=f.fullname, entry=entry)
         self.opts.processedFile(f.fullname)
-        if vunit: self.popCont()
+        if vunit: popCont()
 
     def analyzeString(self, fstr, vunit=None, entry=''):
-        if vunit: self.pushCont(vunit)
+        if vunit: pushCont(vunit)
         self._parse(fromstr=fstr, entry=entry)
-        if vunit: self.popCont()
+        if vunit: popCont()
 
     # parse a file or list of file
     @classmethod

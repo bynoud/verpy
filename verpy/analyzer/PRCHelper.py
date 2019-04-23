@@ -1,7 +1,7 @@
 
 from __future__ import print_function, absolute_import
 
-from VerpyError import *
+from ..VerpyError import *
 
 def entryName(ctx):
     n = type(ctx).__name__
@@ -72,8 +72,8 @@ def duplicateCtx(ctx, prefix='', postfix=''):
 
 #import parser
 #from parser import *
-from parser.VerexLexer import VerexLexer
-from parser.VerexParser import VerexParser
+from ..parser.VerexLexer import VerexLexer
+from ..parser.VerexParser import VerexParser
 from antlr4 import CommonTokenStream,FileStream,InputStream
 
 def createInputStream(filename='', fromstr='', srcName=''):

@@ -13,6 +13,15 @@ class VerexListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by VerexParser#description.
+    def enterDescription(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#description.
+    def exitDescription(self, ctx):
+        pass
+
+
     # Enter a parse tree produced by VerexParser#module_declaration.
     def enterModule_declaration(self, ctx):
         pass
@@ -163,6 +172,24 @@ class VerexListener(ParseTreeListener):
 
     # Exit a parse tree produced by VerexParser#variable_lvalue.
     def exitVariable_lvalue(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#expression.
+    def enterExpression(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#expression.
+    def exitExpression(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#inc_or_dec_expression.
+    def enterInc_or_dec_expression(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#inc_or_dec_expression.
+    def exitInc_or_dec_expression(self, ctx):
         pass
 
 
@@ -409,6 +436,69 @@ class VerexListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by VerexParser#text_macro_definition.
+    def enterText_macro_definition(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#text_macro_definition.
+    def exitText_macro_definition(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#text_macro_name.
+    def enterText_macro_name(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#text_macro_name.
+    def exitText_macro_name(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#list_of_formal_arguments.
+    def enterList_of_formal_arguments(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#list_of_formal_arguments.
+    def exitList_of_formal_arguments(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#text_macro_identifier.
+    def enterText_macro_identifier(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#text_macro_identifier.
+    def exitText_macro_identifier(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#formal_argument_identifier.
+    def enterFormal_argument_identifier(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#formal_argument_identifier.
+    def exitFormal_argument_identifier(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#macro_text.
+    def enterMacro_text(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#macro_text.
+    def exitMacro_text(self, ctx):
+        pass
+
+
+    # Enter a parse tree produced by VerexParser#text_macro_usage.
+    def enterText_macro_usage(self, ctx):
+        pass
+
+    # Exit a parse tree produced by VerexParser#text_macro_usage.
+    def exitText_macro_usage(self, ctx):
+        pass
+
+
     # Enter a parse tree produced by VerexParser#config_declaration.
     def enterConfig_declaration(self, ctx):
         pass
@@ -496,15 +586,6 @@ class VerexListener(ParseTreeListener):
 
     # Exit a parse tree produced by VerexParser#source_text.
     def exitSource_text(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#description.
-    def enterDescription(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#description.
-    def exitDescription(self, ctx):
         pass
 
 
@@ -2407,15 +2488,6 @@ class VerexListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by VerexParser#expression.
-    def enterExpression(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#expression.
-    def exitExpression(self, ctx):
-        pass
-
-
     # Enter a parse tree produced by VerexParser#term.
     def enterTerm(self, ctx):
         pass
@@ -2902,15 +2974,6 @@ class VerexListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by VerexParser#text_macro_identifier.
-    def enterText_macro_identifier(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#text_macro_identifier.
-    def exitText_macro_identifier(self, ctx):
-        pass
-
-
     # Enter a parse tree produced by VerexParser#topmodule_identifier.
     def enterTopmodule_identifier(self, ctx):
         pass
@@ -2962,60 +3025,6 @@ class VerexListener(ParseTreeListener):
 
     # Exit a parse tree produced by VerexParser#escaped_hierarchical_branch.
     def exitEscaped_hierarchical_branch(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#text_macro_definition.
-    def enterText_macro_definition(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#text_macro_definition.
-    def exitText_macro_definition(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#text_macro_name.
-    def enterText_macro_name(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#text_macro_name.
-    def exitText_macro_name(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#list_of_formal_arguments.
-    def enterList_of_formal_arguments(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#list_of_formal_arguments.
-    def exitList_of_formal_arguments(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#formal_argument_identifier.
-    def enterFormal_argument_identifier(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#formal_argument_identifier.
-    def exitFormal_argument_identifier(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#macro_text.
-    def enterMacro_text(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#macro_text.
-    def exitMacro_text(self, ctx):
-        pass
-
-
-    # Enter a parse tree produced by VerexParser#text_macro_usage.
-    def enterText_macro_usage(self, ctx):
-        pass
-
-    # Exit a parse tree produced by VerexParser#text_macro_usage.
-    def exitText_macro_usage(self, ctx):
         pass
 
 

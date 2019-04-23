@@ -1,6 +1,6 @@
 
 from __future__ import print_function, absolute_import
-from VerpyError import *
+from ..VerpyError import *
 from .VerilogMixins import *
 import logging
 
@@ -45,10 +45,9 @@ class VerilogObject(CloneableMixin):
     # deep copy
     # allow parent tobe change by kwargs
     def copyfrom(self, frm, **kwargs):
-        if not isinstance(frm, self.__class__):
-            raise InternalFatal("Cannot copy from different type of object")
+        assert isinstance(frm, VerilogObject)
         if 'parent' in kwargs:
-            print("Vobject copyfrom parent applied %s" % type(self))
+            #print("Vobject copyfrom parent applied %s" % type(self))
             self.parent = kwargs['parent']
         else:
             self.parent = frm.parent
@@ -60,7 +59,8 @@ class VerilogObject(CloneableMixin):
         self.column = frm.column
         self._uninum = frm._uninum
 
-    def getRoot(self):
+    @property
+    def root(self):
         try:
             return self._root
         except:

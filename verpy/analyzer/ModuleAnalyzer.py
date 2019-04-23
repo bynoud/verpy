@@ -23,9 +23,11 @@ _defaultNodes = """
                     >>continuous_assign
                         #accept_all_this
                     >module_instantiation
-                        list_of_port_connections
-                            ?ordered_port_connection #not_supported
-                            >mixed_port_connection >comma_mixed_port_connection
+                        parameter_value_assignment list_of_parameter_assignments
+                        >module_instance
+                            list_of_port_connections
+                                ?ordered_port_connection #not_supported
+                                >mixed_port_connection >comma_mixed_port_connection
                     >initial_construct
                         #...statement
                     >always_construct
@@ -44,23 +46,24 @@ _defaultNodes = """
                         >>seq_block
                 !...
                     >>expression
-                        >>term  #sometime_you_want_to_use_visitChilds(expression)
+                        #sometime_you_want_to_use_visitChilds(expression)
+                        #it's_now_down_to_primary_not_term>>term
+                        >>primary
                         #expression_need_to_be_accepted_from_upper_level
 """
 
 class ModuleAnalyzer(IOAnalyzer):
-    def __init__(self, vunit=None, options=None):
-        super(ModuleAnalyzer, self).__init__(vunit, options)
-        self._visitChildNodes.update(initDefaultChild(_defaultNodes))
-        self.unit = curCont().getRoot()
-        #from verilog.Unit import Unit
-        #self.unit = curCont()
-        #for i in range(1000000):
-        #    if isinstance(self.unit, Unit):
-        #        break
-        #    self.unit = self.unit.parent
-        #if not isinstance(self.unit, Unit):
-        #    raise InternalFatal("Cannot find root Unit")
+    def __init__(self, strOpts=None, options=None,
+            parser=None, lexer=None, defaultVisit=""):
+        super(ModuleAnalyzer, self).__init__(strOpts, options, parser, lexer,
+                defaultVisit + " " + _defaultNodes)
+        self.unresolved = []
+
+    def visitModule_declaration(self, ctx):
+        name = ctx.module_identifier().getText()
+        if name in self.unresolved:
+            self.unresolved.remove(name)
+        super(ModuleAnalyzer, self).visitModule_declaration(ctx)
 
     # net decl, IO dont go and check assignment
     def visitNet_declaration(self, ctx):
@@ -68,48 +71,57 @@ class ModuleAnalyzer(IOAnalyzer):
         parr = range2arr(ctx.range_())
         if ctx.list_of_net_identifiers() != None:
             for nctx in ctx.list_of_net_identifiers().net_identifier_wrange():
-                n = curCont().newNet(nctx.net_identifier().getText(), nt)
+                n = self.curCont().newNet(nctx.net_identifier().getText(), nt)
                 n.declBus(parr, dim2arr(nctx.dimension()))
         else:
             for nctx in ctx.list_of_net_decl_assignments().net_decl_assignment():
-                n = curCont().newNet(nctx.net_identifier().getText(), nt)
+                n = self.curCont().newNet(nctx.net_identifier().getText(), nt)
                 n.declBus(parr)
-                pushCont( curCont().newAssign('decl_assign') )
-                curCont().referNet(n.name, parr)
-                curCont().setRhs()
+                self.pushCont( self.curCont().newAssign('decl_assign') )
+                self.curCont().referNet(n.name, parr)
+                self.curCont().setRhs()
                 self.visitChilds(nctx.expression())
-                popCont()
+                self.popCont()
+
+    def visitInteger_declaration(self, ctx):
+        for nctx in ctx.list_of_variable_identifiers().variable_type():
+            n = self.curCont().newNet(nctx.variable_identifier().getText(), 'integer')
+            n.declBus([], dim2arr(nctx.dimension()))
 
     def visitHierid_reference(self, ctx):
         refbus = []
         for e in ctx.expression(): refbus.append( [e.getText()]*2 )
         if ctx.range_expression():
             refbus.append(rexpr2arr(ctx.range_expression()))
-        curCont().referNet(ctx.hierarchical_identifier().getText(), refbus)
+        self.curCont().referNet(ctx.hierarchical_identifier().getText(), refbus)
 
     # assignment
-    def _visitAssigment(self, ctx, ntype):
+    def _visitAssignment(self, ctx, ntype):
         try: lhs = ctx.variable_lvalue()
         except: lhs = ctx.net_lvalue()
-        a = pushCont(curCont().newAssign(ntype))
+        a = self.pushCont(self.curCont().newAssign(ntype))
         self.visitChilds(lhs)
         a.setRhs()
         self.visitChilds(ctx.expression())
-        popCont()
+        self.popCont()
 
     def visitNet_assignment(self, ctx):
-        self._visitAssigment(ctx, 'cont_assign')
+        self._visitAssignment(ctx, 'cont_assign')
 
     # cell instance/parameter override
     def visitModule_instantiation(self, ctx):
         name = self._savedctx['modname'] = ctx.module_identifier().getText()
+        if name not in self.unit.mods:
+            self.unresolved.append(name)
         #if name not in self.unit.mods:
         #    fname = self.opts.findFile(name)
+        self._savedctx['param_o'] = []
+        self._savedctx['param_n'] = {}
         self.visitChilds(ctx)
 
     def visitList_of_parameter_assignments(self, ctx):
-        self._savedctx['param_o'] = []
-        self._savedctx['param_n'] = {}
+        #self._savedctx['param_o'] = []
+        #self._savedctx['param_n'] = {}
         self.visitChilds(ctx)
 
     def visitOrdered_parameter_assignment(self, ctx):
@@ -123,16 +135,16 @@ class ModuleAnalyzer(IOAnalyzer):
         self.visitNamed_parameter_assignment(ctx)
 
     def visitModule_instance(self, ctx):
-        m = curCont().newCell(ctx.name_of_instance().getText(),
+        m = self.curCont().newCell(ctx.name_of_instance().getText(),
                             self._savedctx['modname'])
         m.defparams(self._savedctx['param_o'])
         m.defparams(self._savedctx['param_n'])
-        pushCont(m)
+        self.pushCont(m)
         self.visitChilds(ctx)
-        popCont()
+        self.popCont()
 
     def visitSpecial_port_connection(self,ctx):
-        p = curCont().newPin('/*/')
+        p = self.curCont().newPin('/*/')
         p.referNet(ctx.getText()[1])
 
     def visitComma_Special_port_connection(self, ctx):
@@ -141,15 +153,15 @@ class ModuleAnalyzer(IOAnalyzer):
     # dont infer ordered port connection for now
     def visitMixed_port_connection(self, ctx):
         dir_ = 'any'
-        if ctx.PinDirection:
-            dir_ =  ctx.PinDirection.text
+        if ctx.PinDirection():
+            dir_ =  ctx.PinDirection().text
             if 'put' not in dir_ and dir_ != 'any':
                 dir_ += 'put'
-        p = curCont().newPin(ctx.port_identifier().getText(), dir_)
+        p = self.curCont().newPin(ctx.port_identifier().getText(), dir_)
         if ctx.port_connection_expression():
-            pushCont(p)
+            self.pushCont(p)
             self.visitChilds(ctx.port_connection_expression())
-            popCont()
+            self.popCont()
 
     def visitComma_mixed_port_connection(self, ctx):
         self.visitChilds(ctx)
@@ -157,36 +169,36 @@ class ModuleAnalyzer(IOAnalyzer):
 
     ## proceduce block
     def visitInitial_construct(self, ctx):
-        pushCont(curCont().newSeq('initial'))
+        self.pushCont(self.curCont().newSeq('initial'))
         self.visitChilds(ctx)
-        popCont()
+        self.popCont()
 
     def visitAlways_construct(self, ctx):
-        pushCont(curCont().newSeq('always'))
+        self.pushCont(self.curCont().newSeq('always'))
         self.visitChilds(ctx)
-        popCont()
+        self.popCont()
 
     def visitBlocking_assignment(self, ctx):
-        self._visitAssigment(ctx, 'blocking')
+        self._visitAssignment(ctx, 'blocking')
 
     def visitNonblocking_assignment(self, ctx):
-        self._visitAssigment(ctx, 'nonblock')
+        self._visitAssignment(ctx, 'nonblock')
 
     def visitCase_statement(self, ctx):
-        pushCont(curCont().newOtherRhs('__case_expression__'))
+        self.pushCont(self.curCont().newOtherRhs('__case_expression__'))
         self.visitChilds(ctx.expression())
-        popCont()
+        self.popCont()
         for i in ctx.case_item():
-            pushCont(curCont().newOtherRhs('__case_item__'))
+            self.pushCont(self.curCont().newOtherRhs('__case_item__'))
             for e in i.expression():
                 self.visitChilds(e)
-            popCont()
+            self.popCont()
             self.visitChilds(i.statement_or_null())
 
     def visitStat_if(self, ctx):
-        pushCont(curCont().newOtherRhs('__if_cond__'))
+        self.pushCont(self.curCont().newOtherRhs('__if_cond__'))
         self.visitChilds(ctx.expression())
-        popCont()
+        self.popCont()
         self.visitChilds(ctx.statement_or_null())
 
     def visitStat_elseif(self, ctx):
@@ -196,20 +208,29 @@ class ModuleAnalyzer(IOAnalyzer):
         self.visitChilds(ctx.statement_or_null())
 
     def visitLoop_statement(self, ctx):
+        self.pushCont(self.curCont().newLoopSeq(ctx.kw.text))
         for a in ctx.variable_assignment():
             self._visitAssignment(a, 'loop_assign')
         if ctx.expression():
-            pushCont(curCont().newOtherRhs('__loop_cond__'))
+            self.pushCont(self.curCont().newOtherRhs('__loop_cond__'))
             self.visitChilds(ctx.expression())
-            popCont()
-        self.visitChilds(ctx.statement)
+            self.popCont()
+        self.visitChilds(ctx.statement())
+        self.popCont()
 
     def visitProcedural_timing_control_statement(self, ctx):
         if ctx.delay_or_event_control().event_control():
-            pushCont(curCont().newOtherRhs('__event_control__'))
+            self.pushCont(self.curCont().newOtherRhs('__event_control__'))
             self.visitChilds(ctx.delay_or_event_control())
-            popCont()
+            self.popCont()
         self.visitChilds(ctx.statement_or_null())
 
 
+    def analyze(self):
+        unit = super(ModuleAnalyzer, self).analyze()
+        for mod in self.unresolved:
+            f = self.opts.findLibFile(mod)
+            if f:
+                self.analyzeFile(f)
+        return unit
 

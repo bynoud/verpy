@@ -1,7 +1,7 @@
 
 from __future__ import print_function, absolute_import
 from .BaseAnalyzer import *
-from __builtin__ import classmethod
+#from __builtin__ import classmethod
 
 # use prefix '>>' to accept al child&grand child
 # other prefix not letter will remove that
@@ -28,31 +28,32 @@ _defaultNodes = """
 
 # from Liclipse
 class IOAnalyzer(BaseAnalyzer):
-    def __init__(self, vunit=None, options=None):
-        super(IOAnalyzer, self).__init__(vunit, options)
-        self._visitChildNodes.update(initDefaultChild(_defaultNodes))
+    def __init__(self, strOpts=None, options=None,
+            parser=None, lexer=None, defaultVisit=""):
+        super(IOAnalyzer, self).__init__(strOpts, options, parser, lexer,
+                defaultVisit + " " + _defaultNodes)
 
     def visitModule_declaration(self, ctx):
-        m = curCont().newModule(ctx.module_identifier().getText(),
+        m = self.curCont().newModule(ctx.module_identifier().getText(),
                               ctx.module_keyword().getText())
-        pushCont(m)
+        self.pushCont(m)
         self.visitChilds(ctx)
-        popCont()
+        self.popCont()
 
     def visitParameter_declaration_(self, ctx):
         # just ignore the 'range_'
         for c in ctx.list_of_param_assignments().param_assignment():
-            curCont().newParam(c.parameter_identifier().getText(),
+            self.curCont().newParam(c.parameter_identifier().getText(),
                              c.constant_expression().getText())
 
     def visitLocal_parameter_declaration(self, ctx):
         for c in ctx.list_of_param_assignments().param_assignment():
-            curCont().newLocalparam(c.parameter_identifier().getText(),
+            self.curCont().newLocalparam(c.parameter_identifier().getText(),
                                   c.constant_expression().getText())
 
     # port header inside module <name> (portname [...] , portname, [...])
     def visitPort_reference(self, ctx):
-        p = curCont().newPortHeader(ctx.port_identifier().getText())
+        p = self.curCont().newPortHeader(ctx.port_identifier().getText())
         if ctx.constant_expression():
             p.refBus([[ctx.constant_expression().getText()]*2])
         elif ctx.range_expression():
@@ -66,7 +67,7 @@ class IOAnalyzer(BaseAnalyzer):
         elif ctx.regtype != None  : nt = ctx.regtype.text
         parr = range2arr(ctx.range_())
         for pctx in ctx.list_of_port_identifiers().port_identifier():
-            p = curCont().newPort(pctx.getText(), ctx.portkw.text, nt)
+            p = self.curCont().newPort(pctx.getText(), ctx.portkw.text, nt)
             p.declBus(parr)
 
     # net decl
@@ -75,17 +76,17 @@ class IOAnalyzer(BaseAnalyzer):
         parr = range2arr(ctx.range_())
         if ctx.list_of_net_identifiers() != None:
             for nctx in ctx.list_of_net_identifiers().net_identifier_wrange():
-                n = curCont().newNet(nctx.net_identifier().getText(), nt)
+                n = self.curCont().newNet(nctx.net_identifier().getText(), nt)
                 n.declBus(parr, dim2arr(nctx.dimension()))
         else:
             for nctx in ctx.list_of_net_decl_assignments().net_decl_assignment():
-                n = curCont().newNet(nctx.net_identifier().getText(), nt)
+                n = self.curCont().newNet(nctx.net_identifier().getText(), nt)
                 n.declBus(parr)
 
     # reg decl
     def visitReg_declaration(self, ctx):
         parr = range2arr(ctx.range_())
         for nctx in ctx.list_of_variable_identifiers().variable_type():
-            n = curCont().newNet(nctx.variable_identifier().getText(), 'reg')
+            n = self.curCont().newNet(nctx.variable_identifier().getText(), 'reg')
             n.declBus(parr, dim2arr(nctx.dimension()))
 

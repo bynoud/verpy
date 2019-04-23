@@ -14,7 +14,7 @@ class ContainableMixin(object):
         return self
 
     def containerCopy(self, frm, **kwargs):
-        from VerilogObject import primaryCopy
+        from .VerilogObject import primaryCopy
         self.__contRef = primaryCopy(frm.__contRef, False) # shadow copy if already resolved
 
     # this normally called ad analyze time, bus-width maybe in form of expression
@@ -45,8 +45,8 @@ class ContainableMixin(object):
                 r.append(net)
             self.__contRef[ii] = r
 
-    def containerRef(self, ind=0):
-        return self.__contRef[ind]
+    #def containerRef(self, ind=0):
+    #    return self.__contRef[ind]
 
     def containerIter(self, ind=0):
         for i in self.__contRef[ind]:
@@ -56,7 +56,7 @@ class ContainableMixin(object):
         self.__contRef[ind] = []
 
     def containerDump(self, indent='', ind=0):
-        from VerilogObject import VerilogObject
+        from .VerilogObject import VerilogObject
         for i in self.__contRef[ind]:
             # even with Net, use 'name [selbit]' for clarify
             print("%s%s" % (indent, i))

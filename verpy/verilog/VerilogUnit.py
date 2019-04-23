@@ -1,8 +1,8 @@
 
 from __future__ import print_function, absolute_import
 from .VerilogObject import *
-from .VobjectList import ModuleList
-from VerpyError import *
+from .VList import ModuleList
+from ..VerpyError import *
 
 class VerilogUnit(VerilogObject):
     def __init__(self, name='$unit'):

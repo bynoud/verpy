@@ -3,7 +3,7 @@ from __future__ import print_function, absolute_import
 from .VerilogObject import *
 from .VList import PinList
 from .ParamMixin import ParamMixin
-from VerpyError import *
+from ..VerpyError import *
 
 class Cell(VerilogObject):
     def __init__(self, name, modname="", parent=None):
@@ -28,39 +28,35 @@ class Cell(VerilogObject):
     def referNet(self, name, arr=None):
         return self.parent.referNet(name, arr)
 
-    # unify module-ref, by parameter value
-    def _uniquify(self):
+    def elaborate(self):
+        if not self.modref: return
+        # unify module-ref, by parameter value
         modref = self.modref.clone()
         modref.elaborate(self._defp)
         self.modref = modref
-
-    def _resolve_pin_connections(self):
+        # resolve pin connection
         _pinnames = []
-        debug("start to resolves : %s -> %s" % (self.name, self.pinnames))
-        for (i,p) in enumerate(self.pins_order):
+        debug("start to resolves : %s -> %s" % (self.name, self.modref))
+        for (i,p) in enumerate(self.pins):
             try:
                 p.elaborate(self.modref.ports, _pinnames)
             except VerpySyntaxError,e:
                 raise VerpySyntaxError("Failed to resolve cell '%s' : %s" %
                                        self.name, e)
 
-    def elaborate(self):
-        if not self.modref: return
-        self._uniquify()                # unique this instance
-        self._resolve_pin_connections() # resolve pin connection
-
     def defparams(self,val):
+        if not val: return
         if isinstance(val,dict):
-            if self._defp is None: self._defp = {}
-            for (n,v) in val.items(): self._defp[n] = v
+            if not self._defp: self._defp = {}
+            self._defp.update(val)
         else:
-            if self._defp is None: self._defp = []
-            elif isinstance(val, list):
+            if not self._defp: self._defp = []
+            if isinstance(val, (list, tuple)):
                 self._defp += val
-            elif val is not None:
+            else:
                 self._defp.append(val)
 
-    def checkDrivenLoad(self, nets, params=None, tbused=None):
+    def checkDriverLoad(self, nets, params=None, tbused=None):
         for p in self.pins:
             p.checkDriverLoad(nets, params, tbused)
 
@@ -69,4 +65,7 @@ class Cell(VerilogObject):
         indent+="  "
         print(indent+"defparam : '%s'" % (self._defp))
         for p in self.pins: p.dump(indent)
+        if self.modref:
+            print(indent+"--- Mod ref ---")
+            self.modref.dump(indent)
 

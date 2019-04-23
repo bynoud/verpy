@@ -3,7 +3,8 @@ from __future__ import print_function, absolute_import
 from .VList import NetList
 from .SliceableObject import SizeSliceable
 from .AstEvaluation import eval_expression
-from VerpyError import *
+from .VerilogObject import primaryCopy
+from ..VerpyError import *
 
 class Net(SizeSliceable):
     def __init__(self, name, ntype='wire', direction='net', parent=None):
@@ -30,13 +31,14 @@ class Net(SizeSliceable):
 
     # arr = [[2,1], [3,2], [4,1]]
     def declBus(self, parr, uarr=None):
+        if not (parr or uarr): return
         if uarr is None: uarr = []
         self._rawbus.append( [ [x[0],x[1],False] for x in uarr ] +
                              [ [x[0],x[1],True]  for x in parr ] )
 
     # arr = [[2,1], [3,3]..]
     def refBus(self, arr):
-        self._rawref.append(arr)
+        if arr: self._rawref.append(arr)
 
     def _buswidthResolve(self, params=None):
         if not self._rawbus: return
@@ -83,6 +85,30 @@ class Net(SizeSliceable):
             super(Net, self).elaborate(params)
         except VerpySyntaxError, e:
             raise VerpyElabError("elab failed, net '%s' : %s" % (self, e))
+
+    def _array(self):
+        ptxt = utxt = ""
+        if self._rawbus:    # if not elab yet, only get first decl encounter
+            ptxt = ''.join("[%s:%s]" % (m,l) for m,l,p in self._rawbus[0] if p)
+            utxt = ''.join("[%s:%s]" % (m,l) for m,l,p in self._rawbus[0] if not p)
+        else:
+            for [m,l,p] in self._arr:
+                t = '[*]' if m<0 else ("[%s:%s]" % (m,l))
+                if p: ptxt += t+" "
+                else: utxt += " "+t
+        return ptxt, utxt
+
+    @property
+    def arrayBus(self):
+        ptxt, utxt = self._array()
+        return "%s%s" % (ptxt, "" if not utxt else utxt+"u")
+
+    # use for declare
+    @property
+    def decl(self):
+        ptxt, utxt = self._array()
+        txt = ptxt+self.name+utxt
+        return txt
 
     def dump(self, indent=""):
         #print(indent+self.direction+": "+str(self.ntype)+" ", end="")

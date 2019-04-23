@@ -10,6 +10,11 @@ class VerexVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by VerexParser#description.
+    def visitDescription(self, ctx):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by VerexParser#module_declaration.
     def visitModule_declaration(self, ctx):
         return self.visitChildren(ctx)
@@ -92,6 +97,16 @@ class VerexVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by VerexParser#variable_lvalue.
     def visitVariable_lvalue(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#expression.
+    def visitExpression(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#inc_or_dec_expression.
+    def visitInc_or_dec_expression(self, ctx):
         return self.visitChildren(ctx)
 
 
@@ -230,6 +245,41 @@ class VerexVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by VerexParser#text_macro_definition.
+    def visitText_macro_definition(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#text_macro_name.
+    def visitText_macro_name(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#list_of_formal_arguments.
+    def visitList_of_formal_arguments(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#text_macro_identifier.
+    def visitText_macro_identifier(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#formal_argument_identifier.
+    def visitFormal_argument_identifier(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#macro_text.
+    def visitMacro_text(self, ctx):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by VerexParser#text_macro_usage.
+    def visitText_macro_usage(self, ctx):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by VerexParser#config_declaration.
     def visitConfig_declaration(self, ctx):
         return self.visitChildren(ctx)
@@ -277,11 +327,6 @@ class VerexVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by VerexParser#source_text.
     def visitSource_text(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#description.
-    def visitDescription(self, ctx):
         return self.visitChildren(ctx)
 
 
@@ -1340,11 +1385,6 @@ class VerexVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by VerexParser#expression.
-    def visitExpression(self, ctx):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by VerexParser#term.
     def visitTerm(self, ctx):
         return self.visitChildren(ctx)
@@ -1615,11 +1655,6 @@ class VerexVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by VerexParser#text_macro_identifier.
-    def visitText_macro_identifier(self, ctx):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by VerexParser#topmodule_identifier.
     def visitTopmodule_identifier(self, ctx):
         return self.visitChildren(ctx)
@@ -1647,36 +1682,6 @@ class VerexVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by VerexParser#escaped_hierarchical_branch.
     def visitEscaped_hierarchical_branch(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#text_macro_definition.
-    def visitText_macro_definition(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#text_macro_name.
-    def visitText_macro_name(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#list_of_formal_arguments.
-    def visitList_of_formal_arguments(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#formal_argument_identifier.
-    def visitFormal_argument_identifier(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#macro_text.
-    def visitMacro_text(self, ctx):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by VerexParser#text_macro_usage.
-    def visitText_macro_usage(self, ctx):
         return self.visitChildren(ctx)
 
 

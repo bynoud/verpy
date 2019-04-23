@@ -2,7 +2,7 @@
 from __future__ import print_function, absolute_import
 from .VerilogObject import *
 from .VerilogMixins import ContainableMixin
-from VerpyError import *
+from ..VerpyError import *
 
 class NetContainer(VerilogObject, ContainableMixin):
     def __init__(self, name, kw='__otherrhs__', parent=None):
@@ -39,7 +39,7 @@ class Assignment(VerilogObject, ContainableMixin):
         super(Assignment, self).copyfrom(frm, **kwargs)
         self.keyw = frm.keyw
         self._side = frm._side
-        containerCopy(frm, **kwargs)
+        self.containerCopy(frm, **kwargs)
 
     def setRhs(self):
         self._side = Assignment.RHS
@@ -50,13 +50,13 @@ class Assignment(VerilogObject, ContainableMixin):
     def referNet(self, name, arr=None):
         return ContainableMixin.referNet(self, name, arr, self._side)
 
-    @property
-    def lhs(self):
-        return self.containerRef(Assignment.LHS)
+    #@property
+    #def lhs(self):
+    #    return self.containerRef(Assignment.LHS)
 
-    @property
-    def rhs(self):
-        return self.containerRef(Assignment.RHS)
+    #@property
+    #def rhs(self):
+    #    return self.containerRef(Assignment.RHS)
 
     def checkDriverLoad(self, nets, params=None, tbused=None):
         from .SeqBlock import SeqBlock

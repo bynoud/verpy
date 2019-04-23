@@ -3,7 +3,7 @@ from __future__ import print_function, absolute_import
 from .VerilogObject import *
 from .VerilogMixins import ContainableMixin
 from .Net import Net
-from VerpyError import *
+from ..VerpyError import *
 
 class Pin(Net, ContainableMixin):
     def __init__(self, name, direction='any', parent=None):
@@ -26,9 +26,10 @@ class Pin(Net, ContainableMixin):
 
     def elaborate(self, ports, elabed):
         name = self.name
-        if name not in ports.names:
+        if name not in ports:
             raise VerpySyntaxError("Port '%s' not found" % self.name)
         self.setPortRef(ports[name])
+        super(Pin, self).elaborate()
         elabed.append(name)
 
     def checkDriverLoad(self, nets, params=None, tbused=None):

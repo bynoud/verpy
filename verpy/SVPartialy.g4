@@ -97,8 +97,14 @@ description
     ;
 
 module_declaration
-    : attribute_instance* module_keyword module_identifier (module_parameter_port_list)? (list_of_ports)? ';' module_item* 'endmodule'
-    | attribute_instance* module_keyword module_identifier (module_parameter_port_list)? (list_of_port_declarations)? ';' non_port_module_item* 'endmodule'
+    : attribute_instance* module_keyword sv_lifetime? module_identifier (parameter_port_list)?
+      ( list_of_ports ';' module_item*
+      | list_of_port_declarations ';' non_port_module_item*
+      | ';' module_item* // V2K defined as non_port_module_item, but this support define port in empty header
+      // What is this in spec??// | '(' sv_portstart='.*' ')' ';' module_item*   // SV features
+      )
+      'endmodule' ( ':' module_identifier )?
+    // no support for 'extern'
     ;
 
 module_keyword
@@ -106,8 +112,17 @@ module_keyword
     | 'macromodule'
     ;
 
+sv_interface_declaration
+    : attribute_instance* 'interface' sv_lifetime? interface_identifier parameter_port_list?
+      ( list_of_ports ';' interface_item*
+      | list_of_port_declarations? ';' non_port_interface_item*
+      // | '(' '.*' ')' ';' interface_item* // ???
+      )
+      'endinterface' ( ':' interface_identifier )?
+    ;
+
 // 1.4 Module parameters and ports
-module_parameter_port_list
+parameter_port_list
     : '#' '(' parameter_declaration_ (',' parameter_declaration_)* ')'
     ;
 
@@ -140,6 +155,8 @@ port_declaration
     : attribute_instance* inout_declaration
     | attribute_instance* input_declaration
     | attribute_instance* output_declaration
+    | attribute_instance* sv_ref_declaration
+    | attribute_instance* sv_interface_port_declaration
     ;
 
 // 1.5 Module items
@@ -206,7 +223,7 @@ parameter_declaration
 
 // split out semi on end. spec grammar is wrong. It won't allow
 // #(parameter B=8) since it wants a ';' in (...). Rule
-// module_parameter_port_list calls this one.
+// parameter_port_list calls this one.
 parameter_declaration_
     : 'parameter' ('signed')? (range_)? list_of_param_assignments
     | 'parameter' 'integer' list_of_param_assignments
@@ -235,6 +252,16 @@ output_declaration
     | 'output' (output_variable_type)? list_of_port_identifiers
     | 'output' output_variable_type list_of_variable_port_identifiers
     ;
+
+sv_interface_port_declaration
+    : interface_identifier list_of_interface_identifiers
+    | interface_identifier '.' modport_identifier list_of_interface_identifiers
+    ;
+
+sv_ref_declaration
+    : 'ref' variable_port_type list_of_variable_identifiers
+    ;
+
 
 // 2.1.3 Type declarations
 event_declaration
@@ -304,6 +331,11 @@ real_type
 variable_type
     : variable_identifier ('=' constant_expression)?
     | variable_identifier dimension (dimension)*
+    ;
+
+sv_lifetime
+    : 'static'
+    | 'automatic'
     ;
 
 // 2.2.2 Strengths
@@ -486,8 +518,8 @@ task_port_item
 // TJP added net_type? to these input/output/inout decls. wasn't in spec.
 // factored out header
 tf_decl_header
-    : tfdir=('input' | 'output' | 'inout') net_type? ('reg')? ('signed')? (range_)?
-    | tfdir=('input' | 'output' | 'inout') net_type? (task_port_type)?
+    : ('input' | 'output' | 'inout') net_type? ('reg')? ('signed')? (range_)?
+    | ('input' | 'output' | 'inout') net_type? (task_port_type)?
     ;
 
 tf_declaration
@@ -747,6 +779,35 @@ generate_block
     : 'begin' (':' generate_block_identifier)? (generate_item)* 'end'
     ;
 
+
+// X. Interface items
+
+interface_or_generate_item
+    : ( attribute_instance )* module_common_item
+    | ( attribute_instance )* modport_declaration
+    | ( attribute_instance )* extern_tf_declaration
+    ;
+
+//extern_tf_declaration
+//    : 'extern' method_prototype ';'
+//    | 'extern' 'forkjoin' task_prototype ';'
+//    ;
+
+interface_item
+    : port_declaration ';'
+    | non_port_interface_item
+    ;
+
+non_port_interface_item
+    : generate_region
+    | interface_or_generate_item
+    | program_declaration
+    | interface_declaration
+    | timeunits_declaration
+    ;
+
+
+
 /*
 // 5 UDP declaration and instantiation
 // 5.1 UDP declaration
@@ -983,22 +1044,22 @@ function_case_statement
 
 function_case_item
     : expression (',' expression)* ':' function_statement_or_null
-    | casedefault='default' (':')? function_statement_or_null
+    | 'default' (':')? function_statement_or_null
     ;
 
 // 6.8 Looping statements
 function_loop_statement
-    : loopkw='forever' function_statement
-    | loopkw='repeat' '(' expression ')' function_statement
-    | loopkw='while' '(' expression ')' function_statement
-    | loopkw='for' '(' ival=variable_assignment ';' expression ';' incr=variable_assignment ')' function_statement
+    : 'forever' function_statement
+    | 'repeat' '(' expression ')' function_statement
+    | 'while' '(' expression ')' function_statement
+    | 'for' '(' variable_assignment ';' expression ';' variable_assignment ')' function_statement
     ;
 
 loop_statement
-    : kw='forever' statement
-    | kw='repeat' '(' expression ')' statement
-    | kw='while' '(' expression ')' statement
-    | kw='for' '(' variable_assignment ';' expression ';' variable_assignment ')' statement
+    : 'forever' statement
+    | 'repeat' '(' expression ')' statement
+    | 'while' '(' expression ')' statement
+    | 'for' '(' variable_assignment ';' expression ';' variable_assignment ')' statement
     ;
 
 // 6.9 Task enable statements
@@ -1393,7 +1454,7 @@ function_call
     ;
 
 system_function_call
-    : system_function_identifier ( '(' (expression (',' expression)*)? ')' )?
+    : system_function_identifier (expression (',' expression)*)?
     ;
 
 genvar_function_call
@@ -1439,7 +1500,7 @@ dimension_constant_expression
     ;
 
 expression
-    : op1=term (binary_operator attribute_instance* op2=term | '?' attribute_instance* expression ':' op2=term)*
+    : term (binary_operator attribute_instance* term | '?' attribute_instance* expression ':' term)*
     ;
 
 term

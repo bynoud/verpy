@@ -4,11 +4,11 @@ import sys
 import logging
 from antlr4.Token import Token
 from antlr4.CommonTokenStream import CommonTokenStream
-from parser.VerexLexer import VerexLexer
-from parser.VerexParser import VerexParser
+from ..parser.VerexLexer import VerexLexer
+from ..parser.VerexParser import VerexParser
+from ..VerpyError import *
 from .PRCHelper import createInputStream, fullText
 from .AnalyzerOption import AnalyzerOption
-from VerpyError import *
 
 # match a preprocessor directive will span another lexer
 # this is to keep track of where error is come from

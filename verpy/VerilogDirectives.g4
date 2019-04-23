@@ -31,7 +31,11 @@ fragment F_SUPPORTED_DIRECT
         'line' |
         'timescale' |
         'nounconnected_drive' |
-        'unconnected_drive'
+        'unconnected_drive' |
+        // not sure, this is used in lib cell
+        'delay_mode_path' |
+        'suppress_faults' |
+        'enable_portfaults'
       )
     ;
 

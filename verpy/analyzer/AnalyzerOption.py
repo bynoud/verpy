@@ -1,7 +1,7 @@
 
 from __future__ import print_function, absolute_import
-import os.path
-from VerpyError import *
+import os.path, re
+from ..VerpyError import *
 
 def _uniapp(tol, val):
     if val not in tol:
@@ -11,16 +11,21 @@ def _filebase(name):
     return os.path.splitext(os.path.basename(name))[0]
 
 def _fname(name, relpath=''):
-    if relpath:
+    # replace variable value
+    #name = re.sub(r'\$', r'${}', name)  # prevent '\$var' to inteprete
+    name = os.path.expandvars(name)
+    #name = re.sub(r'${}', r'\$', name)
+    if relpath and relpath[-1] != '/':
         relpath += '/'
     return os.path.abspath(relpath+name)
 
 class AnalyzerOption(object):
-    def __init__(self, fromstr=''):
-        self.files = []
+    def __init__(self, fromstr=None):
+        self.filenames = []
+        self.files = {}
         self.defines = {}
         self.incdirs = []
-        self.liddirs = []
+        self.libdirs = []
         self.libfiles = {}
         self.libexts = ['.v']    # default '.v' for libext
         if fromstr:
@@ -35,7 +40,11 @@ class AnalyzerOption(object):
     # -f /file/name -F /file/name
     # /file/name
     def strOpt(self, fstr, relpath=''):
-        opts = fstr.split()
+        if isinstance(fstr, str):
+            opts = fstr.split()
+        else:
+            assert isinstance(fstr, (list, tuple))
+            opts = ' '.join(fstr).split()
         i = 0
         while i < len(opts):
             if opts[i] == '-v':
@@ -45,7 +54,7 @@ class AnalyzerOption(object):
                 i += 1
                 _uniapp(self.libdirs, _fname(opts[i], relpath))
             elif opts[i] in ('-f', '-F'):
-                self.parseFileList(opts[i+1], opts[i] == '-F')
+                self.parseFileList(opts[i+1], opts[i] == '-F', relpath)
                 i+=1
             elif opts[i][0] == '+':
                 vs = opts[i][1:].split('+')
@@ -55,25 +64,30 @@ class AnalyzerOption(object):
                         self.newDefine(k, v)
                 elif vs[0] == 'incdir':
                     for d in vs[1:]:
-                        _uniapp(self.incdirs, d)
+                        _uniapp(self.incdirs, _fname(d, relpath))
                 elif vs[0] == 'libext':
                     for d in vs[1].split(','):
                         _uniapp(self.libexts, d)
                 else:
                     raise VerpyLibraryError("Unknown options '%s'" % opts[i])
+            elif opts[i][0] == '-':
+                raise VerpyLibraryError("Unknown options '%s'" % opts[i])
             else:
                 self.newFile(_fname(opts[i], relpath))
             i += 1
 
-    def parseFileList(self, fname, rel=False):
-        relpath =  _fname(os.path.dirname(fname)) if rel else ''
+    def addOpt(self, fstr):
+        self.strOpt(fstr)
+
+    def parseFileList(self, fname, rel=False, currelpath=''):
+        relpath =  _fname(os.path.dirname(currelpath+'/'+fname)) if rel else ''
         with open(fname) as fh:
             flines = fh.readlines()
         import re
         opts = ''
         for l in flines:
             l = l.strip(); l = re.sub(r'//.*$', '', l)
-            opts += l
+            opts += " " + l
         self.strOpt(opts, relpath)
 
     def newDefine(self, name, val=''):
@@ -99,8 +113,13 @@ class AnalyzerOption(object):
         raise VerpyLibraryError("Included file '%s' not found" % name)
 
     def newFile(self, name):
-        if name not in self.files:
-            self.files.append(self.VerilogFile(name))
+        f = self.VerilogFile(name)
+        self.files[f.fullname] = f
+        #if f.fullname in self.files:
+        #    raise VerpyLibraryError("Duplicated file '%s'" % name)
+        if f.fullname not in self.filenames:
+            self.filenames.append(f.fullname)
+        return f
 
     def findLibFile(self, name):
         names = [(name + x) for x in self.libexts]
@@ -111,10 +130,16 @@ class AnalyzerOption(object):
             for f in names:
                 if os.path.isfile(d+'/'+f):
                     return _fname(d+'/'+f)
-        raise VerpyLibraryError("lib for '%s' not found" % name)
+        #raise VerpyLibraryError("lib for '%s' not found" % name)
+        return ""
 
     def unprocessedFiles(self):
-        return [x.fullname for x in self.files if not x.parsed]
+        #return [n for n,f in self.files.items() if not f.parsed]
+        return [f for f in self.filenames if not self.files[f].parsed]
+
+    def processedFile(self, name):
+        assert name in self.files
+        self.files[name].parsed = True
 
     class UserDefine(object):
         def __init__(self, name):

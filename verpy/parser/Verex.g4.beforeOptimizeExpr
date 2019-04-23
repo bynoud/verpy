@@ -111,47 +111,19 @@ variable_lvalue
     | net_concatenation
     ;
 
-//expression
-//    : term
-//    | op1=expression binary_operator op2=expression
-//    | cond=expression '?' iftrue=expression ':' iffalse=expression
-//    ;
-// try to get precedence right, left-recursive should gog into 1 rule
-// operator precedence is the order listed in rule
 expression
-    : primary // a single atom, it include '(' expr ')' type
-    | unary_operator attribute_instance* primary
-    | inc_or_dec_expression // SV
-    // | '(' operator_assignment ')' // SV for (a+=b) term
-    //| expression binary_operator attribute_instance* expression
-    // direct binary here for precedence, and to get left-recursion supported
-    | expression binop='**' expression
-    | expression binop=('*'|'/'|'%') expression
-    | expression binop=('+'|'-') expression
-    | expression binop=('<<'|'>>'|'<<<'|'>>>') expression
-    | expression binop=('<'|'<='|'>'|'>=') expression
-    | expression binop=('=='|'!='|'==='|'!=='|'==?'|'!=?') expression
-    | expression binop='&' expression
-    | expression binop=('^'|'~^'|'^~') expression
-    | expression binop='|' expression
-    | expression binop='&&' expression
-    | expression binop='||' expression
-    //| conditional_expression // this should be right association!!!
-    | <assoc=right>
-        cond=expression '?' iftrue=expression ':' iffalse=expression
-    // SV | inside_expression
-    // SV | tagged_union_expression
+    : term
+    | op1=expression binary_operator op2=expression
+    | cond=expression '?' iftrue=expression ':' iffalse=expression
     ;
-    
-// SV
-inc_or_dec_expression
-    : ('++'|'--') attribute_instance* primary
-    | attribute_instance* primary ('++'|'--')
+
+primity_expression
+    : binary_operator attribute_instance* term
+    | '?' attribute_instance* expression ':' term
     ;
 
 primary
     : number
-    | String
     | hierid_reference
     | concatenation
     | multiple_concatenation
